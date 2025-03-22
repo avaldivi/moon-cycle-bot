@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const sweph = require("swisseph");
 const { CronJob } = require("cron");
 const process = require("process");
+const { getCurrentMoonPhase } = require('./moon_phases');
 
 dotenv.config();
 
@@ -54,28 +55,48 @@ async function getMoonSign() {
   });
 }
 
+function getByteIndex(message, substring) {
+  const charIndex = message.indexOf(substring);
+  const before = message.slice(0, charIndex);
+  return Buffer.byteLength(before, 'utf8');
+}
+
+function getByteIndexedSlice(str, byteStart, byteEnd) {
+  const buf = Buffer.from(str, 'utf8');
+  const sliced = buf.slice(byteStart, byteEnd);
+  return sliced.toString('utf8');
+}
+
+
 // 🔹 Post to Bluesky
-async function postMoonPhase() {
+async function postMoonSignAndPhase() {
   try {
     const agent = await setupAgent();
+    const moon = await getCurrentMoonPhase();
 
     const moonSign = await getMoonSign();
-    const hashtag = "#MoonPhases";
-    const message = `🌙 The Moon is in ${moonSign} today! What energy are you feeling? ${hashtag}`;
+    const hashtag = "#astrology";
+    const message = `🌙 The Moon is currently in its ${moon.currentPhase} phase and transiting ${moonSign} today! What energy are you feeling? ${hashtag}`;
 
-    await agent.post({
+
+    const byteStart = getByteIndex(message, hashtag);
+    const byteEnd = byteStart + Buffer.byteLength(hashtag, 'utf8');
+
+    console.log('hashtag', getByteIndexedSlice(message, byteStart, byteEnd))
+
+    await agent.post({   
       text: message,
       createdAt: new Date().toISOString(),
       facets: [
         {
           index: {
-            byteStart: message.indexOf(hashtag),
-            byteEnd: message.indexOf(hashtag) + hashtag.length + 2
+            byteStart,
+            byteEnd
           },
           features: [
             {
               "$type": "app.bsky.richtext.facet#tag",
-              "tag": hashtag.substring(1) // Remove '#' for API compatibility
+              "tag": hashtag.slice(1) // removes the #
             }
           ]
         }
@@ -92,4 +113,4 @@ async function postMoonPhase() {
 // const job = new CronJob("0 0 * * *", postMoonPhase);
 // job.start();
 
-postMoonPhase();
+postMoonSignAndPhase();
