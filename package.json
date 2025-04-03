@@ -6,6 +6,10 @@
 		"swisseph": "^0.5.17"
 	},
 	"scripts": {
-		"start": "node moon_bot.js"
+		"start": "node moon_bot.js",
+		"test": "jest"
+	},
+	"devDependencies": {
+		"jest": "^29.7.0"
 	}
 }
