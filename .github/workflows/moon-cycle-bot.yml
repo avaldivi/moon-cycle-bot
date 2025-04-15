@@ -1,0 +1,31 @@
+name: Post Daily Moon Update to Bluesky
+
+on:
+  schedule:
+    - cron: '13 13 * * *' # every day at 11:00 UTC
+  workflow_dispatch:
+
+jobs:
+  post-to-bluesky:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run moon-cycle-bot
+        env:
+          BLUESKY_USERNAME: ${{ secrets.BSKY_IDENTIFIER }}
+          BLUESKY_PASSWORD: ${{ secrets.BSKY_APP_PASSWORD }}
+          LAT_COORDINATE: ${{ secrets.LAT_COORDINATE }}
+          LONG_COORDINATE: ${{ secrets.LONG_COORDINATE }}
+          TIMEZONE: ${{ secrets.TIMEZONE }}
+        run: node moon_bot.js
