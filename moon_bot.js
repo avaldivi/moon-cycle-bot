@@ -67,12 +67,6 @@ async function postMoonSignAndPhase() {
   }
 }
 
-// 🔹 Schedule to Run Daily at Midnight UTC
-// const job = new CronJob("0 0 * * *", postMoonPhase);
-// job.start();
-
-postMoonSignAndPhase();
-
 module.exports = {
   getMoonSign,
   postMoonSignAndPhase

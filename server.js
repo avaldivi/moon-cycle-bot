@@ -1,5 +1,6 @@
 const express = require('express');
 const { runMoonGraph } = require('./graph/moonGraph');
+const { postMoonSignAndPhase } = require('./moon_bot');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,6 +40,17 @@ app.post('/interpret', async (req, res) => {
     return res.status(500).json({
       error: "Internal server error during interpretation",
     });
+  }
+});
+
+// 🔹 Daily posting route
+app.post('/daily', async (req, res) => {
+  try {
+    await postMoonSignAndPhase();
+    res.status(200).json({ message: 'Daily moon post sent to Bluesky!' });
+  } catch (err) {
+    console.error("❌ [/daily] Error in daily post:", err);
+    res.status(500).json({ error: "Failed to post daily moon update" });
   }
 });
 
