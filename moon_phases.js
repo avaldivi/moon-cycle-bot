@@ -1,5 +1,6 @@
 const dotenv = require("dotenv");
 const process = require("process");
+const { getTimezoneOffset } = require('./utils')
 
 dotenv.config();
 
@@ -19,11 +20,22 @@ function derivePhaseFromData(illuminationStr, moonAngle) {
 }
 
 async function fetchMoonData(date) {
-  const formattedDate = date.toISOString().split('T')[0];
+  const tz = process.env.TIMEZONE; // "America/New_York"
+  const offset = getTimezoneOffset(date, tz); // automatically -4 or -5 depending on DST
+  
+  // Get local date in that timezone
+  const localDate = new Date(date.toLocaleString('en-US', { timeZone: tz }));
+  const year = localDate.getFullYear();
+  const month = String(localDate.getMonth() + 1).padStart(2, '0');
+  const day = String(localDate.getDate()).padStart(2, '0');
+  const formattedDate = `${year}-${month}-${day}`;
+
   const apiKey = process.env.IPGEO_API_KEY;
   const lat = process.env.LAT_COORDINATE;
   const long = process.env.LONG_COORDINATE;
-  const url = `https://api.ipgeolocation.io/astronomy?apiKey=${apiKey}&lat=${lat}&long=${long}&date=${formattedDate}`;
+  const url = `https://api.ipgeolocation.io/astronomy?apiKey=${apiKey}&lat=${lat}&long=${long}&date=${formattedDate}&tz=${offset}`;
+
+  console.log('Fetching for date:', formattedDate, 'offset:', offset);
 
   try {
     const response = await fetch(url);
@@ -39,7 +51,7 @@ async function findNextImportantPhase(fromDate) {
 
   for (let i = 1; i <= 30; i++) {
     const date = new Date(fromDate);
-    date.setUTCDate(date.getUTCDate() + i);
+    date.setDate(date.getDate() + i);
     const data = await fetchMoonData(date);
 
     if (data) {
@@ -53,9 +65,9 @@ async function findNextImportantPhase(fromDate) {
 
       // phase changed and it's an important one
       if (phase !== lastPhase && IMPORTANT_PHASES.includes(phase)) {
-        const month = date.getUTCMonth() + 1;
-        const day = date.getUTCDate();
-        const year = date.getUTCFullYear();
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const year = date.getFullYear();
         return {
           phase,
           date: `${month}/${day}/${year}`,
@@ -82,15 +94,25 @@ async function getCurrentMoonPhase() {
   if (data) {
     console.log('illumination:', data.moon_illumination_percentage, 'angle:', data.moon_angle);
 
+    // set currentPhase FIRST
     phaseData.currentPhase = derivePhaseFromData(
       data.moon_illumination_percentage,
       data.moon_angle
     );
 
-    const nextPhase = await findNextImportantPhase(date);
-    if (nextPhase) {
-      phaseData.importantClosePhase = nextPhase.phase;
-      phaseData.importantClosePhaseDate = nextPhase.date;
+    // THEN check if today is already an important phase
+    if (IMPORTANT_PHASES.includes(phaseData.currentPhase)) {
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      const year = date.getFullYear();
+      phaseData.importantClosePhase = phaseData.currentPhase;
+      phaseData.importantClosePhaseDate = `${month}/${day}/${year}`;
+    } else {
+      const nextPhase = await findNextImportantPhase(date);
+      if (nextPhase) {
+        phaseData.importantClosePhase = nextPhase.phase;
+        phaseData.importantClosePhaseDate = nextPhase.date;
+      }
     }
   }
 

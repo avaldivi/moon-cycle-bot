@@ -25,8 +25,22 @@ function getByteIndex(message, substring) {
     return phaseMap[phase] || "🌙"; // fallback just in case
   }
 
+  function getTimezoneOffset(date, timezone) {
+    // Use Intl to get the correct offset including DST for a given timezone
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'shortOffset'
+    });
+    
+    const parts = formatter.formatToParts(date);
+    const offsetStr = parts.find(p => p.type === 'timeZoneName')?.value; // e.g. "GMT-4" or "GMT-5"
+    const match = offsetStr?.match(/GMT([+-]\d+)/);
+    return match ? parseInt(match[1]) : -5;
+  }
+
   module.exports = {
     getByteIndex,
     getByteIndexedSlice,
-    getMoonEmoji
+    getMoonEmoji,
+    getTimezoneOffset
   }
