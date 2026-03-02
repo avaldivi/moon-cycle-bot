@@ -3,66 +3,74 @@ const process = require("process");
 
 dotenv.config();
 
-function comparePhaseDates(date, compareMonth, compareDay) {
-  const month = date.getUTCMonth() + 1;
-  const day = date.getUTCDate();
-  return month < compareMonth || (month === compareMonth && day < compareDay);
+const IMPORTANT_PHASES = ["New Moon", "Full Moon"];
+
+function derivePhaseFromData(illuminationStr, moonAngle) {
+  const illumination = parseFloat(illuminationStr);
+  const isWaxing = moonAngle <= 180;
+
+  if (illumination < 2) return "New Moon";
+  if (illumination < 48) return isWaxing ? "Waxing Crescent" : "Waning Crescent";
+  if (illumination < 52) return isWaxing ? "First Quarter" : "Last Quarter";
+  if (illumination < 98) return isWaxing ? "Waxing Gibbous" : "Waning Gibbous";
+  return "Full Moon";
 }
 
-async function fetchMoonData(date, latitude, longitude, timezone) {
+async function fetchMoonData(date) {
   const formattedDate = date.toISOString().split('T')[0];
-  const url = `https://aa.usno.navy.mil/api/rstt/oneday?date=${formattedDate}&coords=${latitude},${longitude}&tz=${timezone}`;
-
-  console.log(latitude, longitude, timezone);
+  const apiKey = process.env.IPGEO_API_KEY;
+  const lat = process.env.LAT_COORDINATE;
+  const long = process.env.LONG_COORDINATE;
+  const url = `https://api.ipgeolocation.io/astronomy?apiKey=${apiKey}&lat=${lat}&long=${long}&date=${formattedDate}`;
 
   try {
     const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    const data = await response.json();
-    return data;
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    return await response.json();
   } catch (error) {
-    console.error('Error fetching Moon data:', error);
+    console.error('Error fetching moon data:', error);
   }
 }
 
-function inferPhaseFromClosest(closestPhase, today) {
-  const { phase, month, day, year } = closestPhase;
-  const closestDate = new Date(Date.UTC(year, month - 1, day));
-  const isPast = today >= closestDate;
+async function findNextImportantPhase(fromDate) {
+  let lastPhase = null;
 
-  // The 8 phases in order
-  const phases = [
-    "New Moon",
-    "Waxing Crescent",
-    "First Quarter",
-    "Waxing Gibbous",
-    "Full Moon",
-    "Waning Gibbous",
-    "Last Quarter",
-    "Waning Crescent",
-  ];
+  for (let i = 1; i <= 30; i++) {
+    const date = new Date(fromDate);
+    date.setUTCDate(date.getUTCDate() + i);
+    const data = await fetchMoonData(date);
 
-  const closestIndex = phases.indexOf(phase);
-  if (closestIndex === -1) return phase; // unknown, return as-is
+    if (data) {
+      const phase = derivePhaseFromData(data.moon_illumination_percentage, data.moon_angle);
 
-  if (isPast) {
-    // closest phase already happened → we're in the phase AFTER it
-    return phases[(closestIndex + 1) % phases.length];
-  } else {
-    // closest phase is upcoming → we're in the phase BEFORE it
-    return phases[(closestIndex - 1 + phases.length) % phases.length];
+      // first iteration — capture current phase to detect transition
+      if (lastPhase === null) {
+        lastPhase = phase;
+        continue;
+      }
+
+      // phase changed and it's an important one
+      if (phase !== lastPhase && IMPORTANT_PHASES.includes(phase)) {
+        const month = date.getUTCMonth() + 1;
+        const day = date.getUTCDate();
+        const year = date.getUTCFullYear();
+        return {
+          phase,
+          date: `${month}/${day}/${year}`,
+        };
+      }
+
+      lastPhase = phase;
+    }
   }
+
+  return null;
 }
 
 async function getCurrentMoonPhase() {
-  const date = new Date(); // ✅ moved inside so it's always today
-  const latitude = process.env.LAT_COORDINATE;
-  const longitude = process.env.LONG_COORDINATE;
-  const timezone = process.env.TIMEZONE;
+  const date = new Date();
+  const data = await fetchMoonData(date);
 
-  const data = await fetchMoonData(date, latitude, longitude, timezone);
   const phaseData = {
     currentPhase: null,
     importantClosePhase: null,
@@ -70,26 +78,21 @@ async function getCurrentMoonPhase() {
   };
 
   if (data) {
-    const currentPhase = data.properties.data.curphase;
-    const closestPhase = data.properties.data.closestphase;
-    const { phase, month, day, year } = closestPhase;
+    console.log('illumination:', data.moon_illumination_percentage, 'angle:', data.moon_angle);
 
-    console.log(data);
-    console.log('curphase from API:', currentPhase);
-    console.log('Closest Phase:', closestPhase);
+    phaseData.currentPhase = derivePhaseFromData(
+      data.moon_illumination_percentage,
+      data.moon_angle
+    );
 
-    const hasImportantPhaseAfterToday = comparePhaseDates(date, month, day);
-
-    if ((phase === 'New Moon' || phase === 'Full Moon') && hasImportantPhaseAfterToday) {
-      phaseData.importantClosePhase = phase;
-      phaseData.importantClosePhaseDate = `${month}/${day}/${year}`;
+    const nextPhase = await findNextImportantPhase(date);
+    if (nextPhase) {
+      phaseData.importantClosePhase = nextPhase.phase;
+      phaseData.importantClosePhaseDate = nextPhase.date;
     }
-
-    // ✅ Use curphase if the API gives it (phase-transition days), otherwise infer
-    phaseData.currentPhase = currentPhase || inferPhaseFromClosest(closestPhase, date);
   }
 
-  console.log('phaseData: ', phaseData);
+  console.log('phaseData:', phaseData);
   return phaseData;
 }
 
