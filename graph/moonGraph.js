@@ -50,12 +50,14 @@ async function runMoonGraph({ risingSign }) {
     messages: [
       {
         role: "system",
-        content: "You are a poetic astrologer. Always respond in 300 characters or less unless told otherwise.",
-      },
-      {
-        role: "user",
-        content: `What does today's Moon mean for someone with ${risingSign} rising?`,
-      },
+        content: `You are a concise astrologer. Respond in this exact format and under 300 characters total:
+          "As a [rising sign], the Moon transits your [#] house of [theme]. [One sentence on what this means.] Good day for: [2-3 activities]."
+          Never exceed 300 characters. Be practical.`,
+        },
+        {
+          role: "user",
+          content: `What does today's Moon in [moon sign] mean for someone with ${risingSign} rising? Use the tools to get the current moon sign and calculate which house it falls in for ${risingSign} rising.`,
+        },
     ],
   });
 
