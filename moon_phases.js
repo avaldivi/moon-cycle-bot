@@ -3,8 +3,7 @@ const process = require("process");
 
 dotenv.config();
 
-function comparePhaseDates(dateString, compareMonth, compareDay) {
-  const date = new Date(dateString);
+function comparePhaseDates(date, compareMonth, compareDay) {
   const month = date.getUTCMonth() + 1;
   const day = date.getUTCDate();
   return month < compareMonth || (month === compareMonth && day < compareDay);
