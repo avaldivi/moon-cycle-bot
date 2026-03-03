@@ -1,6 +1,7 @@
 const express = require('express');
 const { runMoonGraph } = require('./graph/moonGraph');
 const { postMoonSignAndPhase } = require('./moon_bot');
+const { processMentions } = require("./mentions");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -51,6 +52,16 @@ app.post('/daily', async (req, res) => {
   } catch (err) {
     console.error("❌ [/daily] Error in daily post:", err);
     res.status(500).json({ error: "Failed to post daily moon update" });
+  }
+});
+
+app.post("/mentions", async (req, res) => {
+  try {
+    const out = await processMentions({ limit: 50 });
+    res.status(200).json(out);
+  } catch (err) {
+    console.error("[/mentions] error", err);
+    res.status(500).json({ ok: false, error: "failed to process mentions" });
   }
 });
 

@@ -17,4 +17,4 @@ jobs:
     steps:
       - name: Call the /daily endpoint
         run: |
-          curl -X POST https://moon-cycle-bot.fly.dev/daily
+          curl -X POST "${{ secrets.FLY_APP_URL }}/daily"
