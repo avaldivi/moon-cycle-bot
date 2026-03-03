@@ -4,7 +4,7 @@
 #
 
 app = 'moon-cycle-bot'
-primary_region = 'atl'
+primary_region = 'dfw'
 
 [build]
 
@@ -20,3 +20,7 @@ primary_region = 'atl'
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
+
+[mounts]
+  source = "moonbot_data"
+  destination = "/data"
