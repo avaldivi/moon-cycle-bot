@@ -7,11 +7,11 @@ dotenv.config();
 const IMPORTANT_PHASES = ["New Moon", "Full Moon"];
 
 function derivePhaseFromData(illuminationStr, moonAngle) {
-  const illumination = parseFloat(illuminationStr);
+  const illumination = Math.abs(parseFloat(illuminationStr));
   const isWaxing = moonAngle <= 180;
   const distanceFrom180 = Math.abs(moonAngle - 180);
 
-  if (illumination < 2) return "New Moon";
+  if (illumination < 0.5) return "New Moon";
   if (illumination < 48) return isWaxing ? "Waxing Crescent" : "Waning Crescent";
   if (illumination < 52) return isWaxing ? "First Quarter" : "Last Quarter";
   if (illumination >= 99.5 && distanceFrom180 <= 5) return "Full Moon";
@@ -122,4 +122,5 @@ async function getCurrentMoonPhase() {
 
 module.exports = {
   getCurrentMoonPhase,
+  derivePhaseFromData
 };
