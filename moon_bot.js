@@ -36,32 +36,52 @@ async function postMoonSignAndPhase() {
     const moon = await getCurrentMoonPhase();
     const moonSign = await getMoonSign();
     const moonEmoji = getMoonEmoji(moon.currentPhase);
-    const hashtag = "#astrology";
-    const message = `${moonEmoji} The Moon is currently in its ${moon.currentPhase} phase and transiting ${moonSign} today! What energy are you feeling? ${hashtag}`;
 
-    const byteStart = getByteIndex(message, hashtag);
-    const byteEnd = byteStart + Buffer.byteLength(hashtag, 'utf8');
+    const templates = [
+      `${moonEmoji} The Moon is in its ${moon.currentPhase} phase, transiting ${moonSign} today. Drop your rising sign below and I'll reveal which house it's activating in your chart! #astrology #astrosky`,
+      `${moonEmoji} Moon in ${moonSign}, ${moon.currentPhase} phase. Which house is it lighting up for you? Reply with your rising sign to find out. #astrology #astrosky`,
+      `${moonEmoji} The Moon is ${moon.currentPhase} in ${moonSign} today. Tell me your rising sign and I'll tell you exactly which house this energy is moving through for you. #astrology #astrosky`,
+      `${moonEmoji} We've got a ${moon.currentPhase} Moon in ${moonSign} today! Curious which house this is activating for you? Drop your rising sign and let's explore your chart. #astrology #astrosky`,
+    ];
 
-    await agent.post({   
+    // Filter to only messages under 300 characters
+    const validTemplates = templates.filter(t => t.length < 300);
+
+    if (validTemplates.length === 0) {
+      throw new Error("No valid templates under 300 characters!");
+    }
+
+    const message = validTemplates[Math.floor(Math.random() * validTemplates.length)];
+
+    // Dynamically find all hashtags and build facets
+    const facets = [];
+    const hashtagRegex = /#[\w]+/g;
+    let match;
+
+    while ((match = hashtagRegex.exec(message)) !== null) {
+      const hashtag = match[0];
+      const byteStart = getByteIndex(message, hashtag);
+      const byteEnd = byteStart + Buffer.byteLength(hashtag, 'utf8');
+
+      facets.push({
+        index: { byteStart, byteEnd },
+        features: [
+          {
+            "$type": "app.bsky.richtext.facet#tag",
+            "tag": hashtag.slice(1)
+          }
+        ]
+      });
+    }
+
+    await agent.post({
       text: message,
       createdAt: new Date().toISOString(),
-      facets: [
-        {
-          index: {
-            byteStart,
-            byteEnd
-          },
-          features: [
-            {
-              "$type": "app.bsky.richtext.facet#tag",
-              "tag": hashtag.slice(1) // removes the #
-            }
-          ]
-        }
-      ]
+      facets
     });
 
     console.log("✅ Just posted:", message);
+    console.log(`📏 Character count: ${message.length}`);
   } catch (error) {
     console.error("❌ Error posting to Bluesky:", error);
   }

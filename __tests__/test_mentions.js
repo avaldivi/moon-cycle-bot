@@ -1,5 +1,5 @@
-const { generateReply } = require("./llm");
-const { getHouseForRising } = require("./house_calc");
+const { generateReply } = require("../llm");
+const { getHouseForRising } = require("../house_calc");
 
 async function run() {
   const risingSign = "Virgo";
