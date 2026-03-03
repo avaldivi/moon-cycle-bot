@@ -1,7 +1,8 @@
 # syntax = docker/dockerfile:1
 
-# ✅ Use Node 18.20.0 (compatible with swisseph)
-ARG NODE_VERSION=18.20.0
+# Use Node 18.20.0 (compatible with swisseph) - no longer valid after adding python3.14 but notating as the last version that worked incase something goes awry
+# Upgrading to 20.11.1 to use Vercel AI SDK
+ARG NODE_VERSION=20.11.1
 FROM node:${NODE_VERSION}-slim AS base
 
 LABEL fly_launch_runtime="Node.js"
@@ -25,9 +26,11 @@ RUN apt-get update -qq && \
 
 # 🔐 Copy only what’s needed to install dependencies
 COPY package.json package-lock.json ./
+## COPY package.json ./
 
 # ✅ Install with npm to ensure native modules build correctly
 RUN npm ci
+## RUN npm install
 
 # 🧠 Now copy the rest of the app
 COPY . .
