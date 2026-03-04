@@ -2,8 +2,8 @@ const { createReactAgent } = require("@langchain/langgraph/prebuilt");
 const { ChatOpenAI } = require('@langchain/openai');
 const { isAIMessage } = require("@langchain/core/messages");
 const { tool } = require("@langchain/core/tools");
-const { getMoonSign } = require("../moon_sign");
-const { getHouseForRising } = require("../house_calc");
+const { getMoonSign } = require("../tools/moon_sign");
+const { getHouseForRising } = require("../tools/house_calc");
 const { z } = require("zod");
 require("dotenv").config();
 

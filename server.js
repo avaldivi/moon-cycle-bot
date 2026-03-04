@@ -1,7 +1,7 @@
 const express = require('express');
 const { runMoonGraph } = require('./graph/moonGraph');
-const { postMoonSignAndPhase } = require('./moon_bot');
-const { processMentions } = require("./mentions");
+const { postMoonSignAndPhase } = require('./bluesky/moon_bot');
+const { processMentions } = require("./bluesky/mentions");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
