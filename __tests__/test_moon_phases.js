@@ -1,4 +1,4 @@
-const { derivePhaseFromData } = require("../moon_phases");
+const { derivePhaseFromData } = require("../tools/moon_phases");
 
 const tests = [
   // API returns negative illumination for waning phases
