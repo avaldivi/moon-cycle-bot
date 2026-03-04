@@ -15,7 +15,7 @@ async function postMoonTransits(dryRun = false) {
     const transitLines = transits.map(t => {
       const rx = t.rx ? " Rx" : "";
       const applying = t.applying ? "↑" : "↓";
-      return `${applying} Moon ${t.aspect} ${t.planet}${rx} (${t.orb}°)`;
+      return `${applying} Moon ${t.aspect} ${t.planet}${rx}`;
     }).join("\n");
 
     const message = `🌙 Today's moon aspects:\n\n${transitLines}\n\n#astrology #astrosky`;
@@ -45,4 +45,4 @@ async function postMoonTransits(dryRun = false) {
 }
 
 // 🧪 Change to false when ready to post for real
-postMoonTransits(true);
+postMoonTransits(false);
