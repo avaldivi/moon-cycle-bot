@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - moon-transits  # 👈 only triggers on this branch
+      - moon-transits-implementation  # 👈 only triggers on this branch
 
 jobs:
   post:
