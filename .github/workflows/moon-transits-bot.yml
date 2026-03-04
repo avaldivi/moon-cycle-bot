@@ -27,4 +27,4 @@ jobs:
         env:
           BLUESKY_USERNAME: ${{ secrets.BLUESKY_USERNAME }}
           BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}
-        run: node bots/moon_transits_bot.js
+        run: node bluesky/moon_transits_bot.js
