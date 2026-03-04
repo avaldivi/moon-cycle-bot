@@ -1,0 +1,30 @@
+name: Trigger Daily Moon Transits
+
+on:
+  schedule:
+    - cron: '0 16 * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - moon-transits  # 👈 only triggers on this branch
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run moon transits bot
+        env:
+          BLUESKY_USERNAME: ${{ secrets.BLUESKY_USERNAME }}
+          BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}
+        run: node bots/moon_transits_bot.js
