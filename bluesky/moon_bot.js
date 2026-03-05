@@ -1,4 +1,4 @@
-const { setupAgent, post, postThread } = require('./atproto');
+const { setupAgent, postThread } = require('./atproto');
 const { getMoonEmoji } = require('../tools/utils');
 const { getMoonSign } = require('../tools/moon_sign');
 const { getCurrentMoonPhase } = require('../tools/moon_phases');
@@ -35,4 +35,4 @@ async function postMoonSignAndPhase() {
   }
 }
 
-postMoonSignAndPhase();
+module.exports = { postMoonSignAndPhase }
