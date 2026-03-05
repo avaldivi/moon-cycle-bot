@@ -22,10 +22,11 @@ async function postMoonSignAndPhase() {
 
     const message = validTemplates[Math.floor(Math.random() * validTemplates.length)];
     const replyText = `✨ Don't know your rising sign? Find out here: https://ascendant.celestialdoses.com/`;
+    const url = "https://ascendant.celestialdoses.com/";
 
     await postThread(agent, [
       { text: message },
-      { text: replyText }
+      { text: replyText, extraFacets: [buildLinkFacet(replyText, url)] },
     ]);
 
     console.log("✅ Posted moon phase thread");

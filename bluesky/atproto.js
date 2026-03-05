@@ -8,7 +8,7 @@ async function setupAgent() {
   const agent = new AtpAgent({
     service: "https://bsky.social",
     persistSession: (evt, session) => {
-      console.log("🔄 Session Updated:", session);
+      console.log("🔄 Session Updated:");
     },
   });
 
@@ -77,13 +77,18 @@ async function postThread(agent, messages) {
   let rootPost = null;
   let parentPost = null;
 
-  for (const message of messages) {
-    const facets = [...buildHashtagFacets(message), ...(message.extraFacets || [])];
+  for (const msg of messages) {
+    const text = typeof msg === "string" ? msg : msg.text;
+
+    const facets = [
+      ...buildHashtagFacets(text),
+      ...((typeof msg === "object" && msg.extraFacets) ? msg.extraFacets : []),
+    ];
 
     const postData = {
-      text: typeof message === "string" ? message : message.text,
+      text,
       createdAt: new Date().toISOString(),
-      facets
+      facets,
     };
 
     if (rootPost) {
@@ -94,7 +99,6 @@ async function postThread(agent, messages) {
     }
 
     const result = await agent.post(postData);
-
     if (!rootPost) rootPost = result;
     parentPost = result;
   }
