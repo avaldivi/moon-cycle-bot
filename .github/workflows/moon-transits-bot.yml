@@ -4,9 +4,6 @@ on:
   schedule:
     - cron: '0 16 * * *'
   workflow_dispatch:
-  push:
-    branches:
-      - moon-transits-implementation  # 👈 only triggers on this branch
 
 jobs:
   post:
