@@ -2,20 +2,14 @@ name: Trigger Daily Moon Post
 
 on:
   schedule:
-    - cron: "0 13 * * *"  # Every day at 13:00 UTC = 9:00 AM ET
+    - cron: "0 13 * * *" # 13:00 UTC = 9:00 AM ET (most of the year)
   workflow_dispatch:
 
 jobs:
   ping-daily-endpoint:
     runs-on: ubuntu-latest
-    env:
-      BLUESKY_USERNAME: ${{ secrets.BLUESKY_USERNAME }}
-      BLUESKY_PASSWORD: ${{ secrets.BLUESKY_PASSWORD }}
-      LAT_COORDINATE: ${{ secrets.LAT_COORDINATE }}
-      LONG_COORDINATE: ${{ secrets.LONG_COORDINATE }}
-      TIMEZONE: ${{ secrets.TIMEZONE }}
     steps:
       - name: Call the /daily endpoint
         run: |
-          curl -X POST "${{ secrets.FLY_APP_URL }}/daily"
+          curl -f -sS -X POST "${{ secrets.FLY_APP_URL }}/daily" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
