@@ -1,5 +1,5 @@
 const { AtpAgent } = require("@atproto/api");
-const { getByteIndex } = require('../tools/utils');
+const { getByteIndex, getByteIndexedSlice } = require('../tools/utils');
 const dotenv = require("dotenv");
 dotenv.config();
 
@@ -21,24 +21,21 @@ async function setupAgent() {
 }
 
 // 🔹 Build facets for hashtags in a message
-function buildHashtagFacets(message) {
+function buildHashtagFacets(text) {
+  const matches = [...text.matchAll(/(^|\s)(#[\p{L}\p{N}_]+)\b/gu)];
   const facets = [];
-  const hashtagRegex = /#[\w]+/g;
-  let match;
 
-  while ((match = hashtagRegex.exec(message)) !== null) {
-    const hashtag = match[0];
-    const byteStart = getByteIndex(message, hashtag);
-    const byteEnd = byteStart + Buffer.byteLength(hashtag, 'utf8');
+  for (const m of matches) {
+    const tag = m[2]; // like "#astrology"
+    const charIndex = m.index + m[1].length; // start of the hashtag
+    const before = text.slice(0, charIndex);
+
+    const byteStart = Buffer.byteLength(before, "utf8");
+    const byteEnd = byteStart + Buffer.byteLength(tag, "utf8");
 
     facets.push({
       index: { byteStart, byteEnd },
-      features: [
-        {
-          "$type": "app.bsky.richtext.facet#tag",
-          "tag": hashtag.slice(1)
-        }
-      ]
+      features: [{ $type: "app.bsky.richtext.facet#tag", tag: tag.slice(1) }],
     });
   }
 
@@ -48,16 +45,12 @@ function buildHashtagFacets(message) {
 // 🔹 Build facet for a URL link
 function buildLinkFacet(message, url) {
   const byteStart = getByteIndex(message, url);
-  const byteEnd = byteStart + Buffer.byteLength(url, 'utf8');
+  if (byteStart == null) return null;
 
+  const byteEnd = byteStart + Buffer.byteLength(url, "utf8");
   return {
     index: { byteStart, byteEnd },
-    features: [
-      {
-        "$type": "app.bsky.richtext.facet#link",
-        "uri": url
-      }
-    ]
+    features: [{ $type: "app.bsky.richtext.facet#link", uri: url }],
   };
 }
 
@@ -96,6 +89,11 @@ async function postThread(agent, messages) {
         root: { uri: rootPost.uri, cid: rootPost.cid },
         parent: { uri: parentPost.uri, cid: parentPost.cid },
       };
+    }
+
+    for (const f of facets) {
+      const { byteStart, byteEnd } = f.index;
+      console.log("FACET SLICE:", getByteIndexedSlice(text, byteStart, byteEnd));
     }
 
     const result = await agent.post(postData);

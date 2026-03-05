@@ -1,11 +1,12 @@
-const { setupAgent, postThread } = require('./atproto');
-const { getMoonEmoji } = require('../tools/utils');
-const { getMoonSign } = require('../tools/moon_sign');
-const { getCurrentMoonPhase } = require('../tools/moon_phases');
+const { setupAgent, postThread, buildLinkFacet } = require("./atproto");
+const { getMoonEmoji } = require("../tools/utils");
+const { getMoonSign } = require("../tools/moon_sign");
+const { getCurrentMoonPhase } = require("../tools/moon_phases");
 
 async function postMoonSignAndPhase() {
   try {
     const agent = await setupAgent();
+
     const moon = await getCurrentMoonPhase();
     const moonSign = await getMoonSign();
     const moonEmoji = getMoonEmoji(moon.currentPhase);
@@ -17,16 +18,28 @@ async function postMoonSignAndPhase() {
       `${moonEmoji} We've got a ${moon.currentPhase} Moon in ${moonSign} today! Curious which house this is activating for you? Drop your rising sign and let's explore your chart. #astrology #astrosky`,
     ];
 
-    const validTemplates = templates.filter(t => t.length < 300);
-    if (validTemplates.length === 0) throw new Error("No valid templates under 300 characters!");
+    const validTemplates = templates.filter((t) => t.length < 300);
+    if (validTemplates.length === 0) {
+      throw new Error("No valid templates under 300 characters!");
+    }
 
-    const message = validTemplates[Math.floor(Math.random() * validTemplates.length)];
-    const replyText = `✨ Don't know your rising sign? Find out here: https://ascendant.celestialdoses.com/`;
+    const message =
+      validTemplates[Math.floor(Math.random() * validTemplates.length)];
+
+    const replyText =
+      `✨ Don't know your rising sign? Find out here: https://ascendant.celestialdoses.com/`;
+
     const url = "https://ascendant.celestialdoses.com/";
+
+    // build link facet safely
+    const linkFacet = buildLinkFacet(replyText, url);
 
     await postThread(agent, [
       { text: message },
-      { text: replyText, extraFacets: [buildLinkFacet(replyText, url)] },
+      {
+        text: replyText,
+        extraFacets: linkFacet ? [linkFacet] : [],
+      },
     ]);
 
     console.log("✅ Posted moon phase thread");
@@ -36,4 +49,4 @@ async function postMoonSignAndPhase() {
   }
 }
 
-module.exports = { postMoonSignAndPhase }
+module.exports = { postMoonSignAndPhase };
