@@ -6,10 +6,13 @@ on:
   workflow_dispatch:
 
 jobs:
-  ping:
+  ping-mentions-endpoint:
     runs-on: ubuntu-latest
     steps:
-      - name: Call /mentions
+      - name: Call the /mentions endpoint
+        env:
+          FLY_APP_URL: ${{ secrets.FLY_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -sS -X POST "${{ secrets.FLY_APP_URL }}/mentions" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+          curl -f -sS -X POST "$FLY_APP_URL/mentions" \
+            -H "Authorization: Bearer $CRON_SECRET"

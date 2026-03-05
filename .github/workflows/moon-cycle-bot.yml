@@ -2,7 +2,7 @@ name: Trigger Daily Moon Post
 
 on:
   schedule:
-    - cron: "0 13 * * *" # 13:00 UTC = 9:00 AM ET (most of the year)
+    - cron: "0 13 * * *" # 13:00 UTC = 9:00 AM ET (during EDT)
   workflow_dispatch:
 
 jobs:
@@ -10,6 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Call the /daily endpoint
+        env:
+          FLY_APP_URL: ${{ secrets.FLY_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -f -sS -X POST "${{ secrets.FLY_APP_URL }}/daily" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+          echo "cron secret length: ${#CRON_SECRET}"
+          curl -f -sS -X POST "$FLY_APP_URL/daily" \
+            -H "Authorization: Bearer $CRON_SECRET"
