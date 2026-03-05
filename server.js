@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 /**
- * 🔎 Request logger (helps identify who/what is hitting /daily)
+ * 🔎 Request logger (helps identify who/what is hitting endpoints)
  */
 app.use((req, res, next) => {
   const ip =
@@ -27,23 +27,26 @@ app.use((req, res, next) => {
 
 /**
  * 🔐 Simple shared-secret protection for cron endpoints
- * Set CRON_SECRET in Fly secrets + GitHub secrets.
- * GitHub should send: Authorization: Bearer <CRON_SECRET>
+ * GitHub sends: Authorization: Bearer <CRON_SECRET>
  */
 function requireCronSecret(req, res, next) {
-  const secret = process.env.CRON_SECRET;
+  const secret = (process.env.CRON_SECRET || "").trim();
 
-  // If you haven't set CRON_SECRET yet, allow requests but warn loudly.
-  // (Flip this to "return 500" if you prefer hard-fail until configured.)
   if (!secret) {
     console.warn("⚠️ CRON_SECRET is not set; /daily and /mentions are unprotected");
     return next();
   }
 
-  const auth = req.get("authorization") || "";
+  const auth = (req.get("authorization") || "").trim();
   const expected = `Bearer ${secret}`;
 
+  // 🔍 Debug logging (safe)
+  console.log("AUTH HEADER PRESENT?", Boolean(auth));
+  console.log("AUTH HEADER LENGTH:", auth.length);
+  console.log("AUTH HEADER PREFIX:", auth.slice(0, 10));
+
   if (auth !== expected) {
+    console.warn("❌ Unauthorized request to cron endpoint");
     return res.status(401).json({ ok: false, error: "unauthorized" });
   }
 
