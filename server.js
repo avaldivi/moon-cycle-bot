@@ -44,6 +44,7 @@ function requireCronSecret(req, res, next) {
   console.log("AUTH HEADER PRESENT?", Boolean(auth));
   console.log("AUTH HEADER LENGTH:", auth.length);
   console.log("AUTH HEADER PREFIX:", auth.slice(0, 10));
+  console.log("EXPECTED HEADER LENGTH:", (`Bearer ${secret}`).length);
 
   if (auth !== expected) {
     console.warn("❌ Unauthorized request to cron endpoint");
