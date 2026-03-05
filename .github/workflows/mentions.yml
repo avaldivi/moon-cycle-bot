@@ -12,3 +12,4 @@ jobs:
       - name: Call /mentions
         run: |
           curl -sS -X POST "${{ secrets.FLY_APP_URL }}/mentions"
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

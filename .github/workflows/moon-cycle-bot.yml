@@ -18,3 +18,4 @@ jobs:
       - name: Call the /daily endpoint
         run: |
           curl -X POST "${{ secrets.FLY_APP_URL }}/daily"
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
