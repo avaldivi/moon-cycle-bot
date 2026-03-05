@@ -4,14 +4,14 @@ const sweph = require("swisseph");
 // sweph.swe_set_ephe_path('./ephemeris/');
 
 // 🔹 Get Moon’s Tropical Zodiac Sign
-async function getMoonSign() {
+async function getMoonSign(date = null) {
   return new Promise((resolve, reject) => {
-    const now = new Date();
+    const now = date || new Date();
     const julianDay = sweph.swe_julday(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      now.getDate(),
-      now.getHours() + now.getMinutes() / 60,
+      now.getUTCFullYear(),
+      now.getUTCMonth() + 1,
+      now.getUTCDate(),
+      now.getUTCHours() + now.getUTCMinutes() / 60,
       sweph.SE_GREG_CAL
     );
 

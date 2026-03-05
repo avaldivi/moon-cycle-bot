@@ -1,9 +1,9 @@
 const { AtpAgent } = require("@atproto/api");
-const { loadState, saveState, acquireLock, releaseLock } = require("./mentions_state");
-const { generateReply } = require("./llm");
-const { getCurrentMoonPhase } = require("./moon_phases");
-const { getMoonSign } = require("./moon_sign");
-const { getHouseForRising } = require("./house_calc");
+const { loadState, saveState, acquireLock, releaseLock } = require("../mentions_state");
+const { generateReply } = require("../llm");
+const { getCurrentMoonPhase } = require("../tools/moon_phases");
+const { getMoonSign } = require("../tools/moon_sign");
+const { getHouseForRising } = require("../tools/house_calc");
 
 const BOT_HANDLE = process.env.BLUESKY_USERNAME;
 
