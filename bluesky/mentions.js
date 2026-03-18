@@ -1,4 +1,4 @@
-const { AtpAgent } = require("@atproto/api");
+const { setupAgent, replyToPost } = require("./atproto");
 const { loadState, saveState, acquireLock, releaseLock } = require("../mentions_state");
 const { generateReply } = require("../llm");
 const { getCurrentMoonPhase } = require("../tools/moon_phases");
@@ -15,57 +15,11 @@ function startOfToday(timezone = "America/New_York") {
     month: "2-digit",
     day: "2-digit",
   });
-
   const parts = formatter.formatToParts(now);
   const year = parts.find(p => p.type === "year").value;
   const month = parts.find(p => p.type === "month").value;
   const day = parts.find(p => p.type === "day").value;
-
   return new Date(`${year}-${month}-${day}T00:00:00`);
-}
-
-async function setupAgent() {
-  const agent = new AtpAgent({ service: "https://bsky.social" });
-  await agent.login({
-    identifier: process.env.BLUESKY_USERNAME,
-    password: process.env.BLUESKY_PASSWORD,
-  });
-  return agent;
-}
-
-async function getReplyRefs(agent, uri) {
-  const threadRes = await agent.api.app.bsky.feed.getPostThread({
-    uri,
-    depth: 0,
-    parentHeight: 20,
-  });
-
-  let node = threadRes?.data?.thread;
-  if (!node?.post?.uri || !node?.post?.cid) return null;
-
-  const parent = { uri: node.post.uri, cid: node.post.cid };
-
-  while (node.parent && node.parent.post?.uri && node.parent.post?.cid) {
-    node = node.parent;
-  }
-
-  const root = { uri: node.post.uri, cid: node.post.cid };
-
-  return { root, parent };
-}
-
-async function replyToPost(agent, { uri, text }) {
-  const MAX = 300;
-  const safe = (text || "").trim().slice(0, MAX);
-
-  const refs = await getReplyRefs(agent, uri);
-  if (!refs) return;
-
-  await agent.post({
-    text: safe,
-    createdAt: new Date().toISOString(),
-    reply: refs,
-  });
 }
 
 async function processMentions({ limit = 50 } = {}) {
@@ -80,12 +34,10 @@ async function processMentions({ limit = 50 } = {}) {
     const notifRes = await agent.listNotifications({ limit });
     const notifs = notifRes?.data?.notifications || [];
 
-    // Sort oldest → newest
     notifs.sort((a, b) => new Date(a.indexedAt) - new Date(b.indexedAt));
 
     const todayStart = startOfToday(process.env.TIMEZONE || "America/New_York");
 
-    // 🔹 Prime cursor on first run (no backfill)
     if (!lastSeenAt && notifs.length) {
       state.lastSeenAt = notifs[notifs.length - 1].indexedAt;
       saveState(state);
@@ -105,15 +57,10 @@ async function processMentions({ limit = 50 } = {}) {
     for (const n of notifs) {
       const indexedAt = new Date(n.indexedAt);
 
-      // ⛔ Ignore anything before today
       if (indexedAt < todayStart) continue;
-
       if (lastSeenAt && indexedAt <= lastSeenAt) continue;
-
       if (n.reason !== "mention" && n.reason !== "reply") continue;
       if (!n.uri || !n.cid) continue;
-
-      // ⛔ Never reply to yourself
       if (n.author?.handle === BOT_HANDLE) continue;
 
       const key = `${n.uri}::${n.cid}`;
@@ -132,22 +79,12 @@ async function processMentions({ limit = 50 } = {}) {
       );
 
       let replyText;
-
       if (!risingMatch) {
-        replyText =
-          `🌙 Reply with your rising sign like “Virgo rising” and I’ll interpret today’s moon transit for you.`;
+        replyText = `🌙 Reply with your rising sign like "Virgo rising" and I'll interpret today's moon transit for you.`;
       } else {
-        const risingSign =
-          risingMatch[1][0].toUpperCase() + risingMatch[1].slice(1).toLowerCase();
-
+        const risingSign = risingMatch[1][0].toUpperCase() + risingMatch[1].slice(1).toLowerCase();
         const house = getHouseForRising(moonContext.sign, risingSign);
-
-        replyText = await generateReply({
-          risingSign,
-          moonContext,
-          house,
-          userText,
-        });
+        replyText = await generateReply({ risingSign, moonContext, house, userText });
       }
 
       await replyToPost(agent, { uri: n.uri, text: replyText });

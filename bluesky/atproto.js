@@ -1,35 +1,25 @@
-const { AtpAgent } = require("@atproto/api");
+const { Agent, CredentialSession } = require("@atproto/api");
 const { getByteIndex, getByteIndexedSlice } = require('../tools/utils');
 const dotenv = require("dotenv");
 dotenv.config();
 
-// 🔹 Setup Bluesky Agent
 async function setupAgent() {
-  const agent = new AtpAgent({
-    service: "https://bsky.social",
-    persistSession: (evt, session) => {
-      console.log("🔄 Session Updated:");
-    },
-  });
-
-  await agent.login({
+  const session = new CredentialSession(new URL("https://bsky.social"));
+  await session.login({
     identifier: process.env.BLUESKY_USERNAME,
     password: process.env.BLUESKY_PASSWORD,
   });
-
-  return agent;
+  return new Agent(session);
 }
 
-// 🔹 Build facets for hashtags in a message
 function buildHashtagFacets(text) {
   const matches = [...text.matchAll(/(^|\s)(#[\p{L}\p{N}_]+)\b/gu)];
   const facets = [];
 
   for (const m of matches) {
-    const tag = m[2]; // like "#astrology"
-    const charIndex = m.index + m[1].length; // start of the hashtag
+    const tag = m[2];
+    const charIndex = m.index + m[1].length;
     const before = text.slice(0, charIndex);
-
     const byteStart = Buffer.byteLength(before, "utf8");
     const byteEnd = byteStart + Buffer.byteLength(tag, "utf8");
 
@@ -42,7 +32,6 @@ function buildHashtagFacets(text) {
   return facets;
 }
 
-// 🔹 Build facet for a URL link
 function buildLinkFacet(message, url) {
   const byteStart = getByteIndex(message, url);
   if (byteStart == null) return null;
@@ -54,18 +43,15 @@ function buildLinkFacet(message, url) {
   };
 }
 
-// 🔹 Post a single message
 async function post(agent, message, extraFacets = []) {
   const facets = [...buildHashtagFacets(message), ...extraFacets];
-
   return await agent.post({
     text: message,
     createdAt: new Date().toISOString(),
-    facets
+    facets,
   });
 }
 
-// 🔹 Post a thread (array of messages)
 async function postThread(agent, messages) {
   let rootPost = null;
   let parentPost = null;
