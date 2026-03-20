@@ -90,4 +90,17 @@ async function postThread(agent, messages) {
   return rootPost;
 }
 
-module.exports = { setupAgent, buildHashtagFacets, buildLinkFacet, post, postThread };
+async function replyToPost(agent, { uri, cid, text }) {
+  const facets = buildHashtagFacets(text);
+  return await agent.post({
+    text,
+    createdAt: new Date().toISOString(),
+    facets,
+    reply: {
+      root: { uri, cid },
+      parent: { uri, cid },
+    },
+  });
+}
+
+module.exports = { setupAgent, buildHashtagFacets, buildLinkFacet, post, postThread, replyToPost };

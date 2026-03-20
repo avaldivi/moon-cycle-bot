@@ -87,7 +87,7 @@ async function processMentions({ limit = 50 } = {}) {
         replyText = await generateReply({ risingSign, moonContext, house, userText });
       }
 
-      await replyToPost(agent, { uri: n.uri, text: replyText });
+      await replyToPost(agent, { uri: n.uri, cid: n.cid, text: replyText });
 
       processed.add(key);
       replied++;
