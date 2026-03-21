@@ -15,11 +15,11 @@ const PLANETS = [
 ];
 
 const ASPECTS = [
-  { name: "Conjunction", angle: 0,   orb: 8 },
-  { name: "Sextile",     angle: 60,  orb: 6 },
-  { name: "Square",      angle: 90,  orb: 8 },
-  { name: "Trine",       angle: 120, orb: 8 },
-  { name: "Opposite",  angle: 180, orb: 8 },
+  { name: "conjunct", angle: 0,   orb: 8 },
+  { name: "sextile",     angle: 60,  orb: 6 },
+  { name: "square",      angle: 90,  orb: 8 },
+  { name: "trine",       angle: 120, orb: 8 },
+  { name: "opposite",  angle: 180, orb: 8 },
 ];
 
 // 🔹 Get current Julian Day
