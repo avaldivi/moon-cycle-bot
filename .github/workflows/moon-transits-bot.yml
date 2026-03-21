@@ -2,7 +2,7 @@ name: Trigger Daily Moon Transits
 
 on:
   schedule:
-    - cron: '0 16 * * *'
+    - cron: '0 13 * * *'
   workflow_dispatch:
   push:
     branches:
