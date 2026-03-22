@@ -15,4 +15,5 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           curl -f -sS -X POST "$FLY_APP_URL/mentions" \
-            -H "Authorization: Bearer $CRON_SECRET"
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "fly-prefer-region: iad"
