@@ -72,7 +72,10 @@ async function processMentions({ limit = 50 } = {}) {
         parentHeight: 0,
       });
 
-      const userText = threadRes?.data?.thread?.post?.record?.text || "";
+      const post = threadRes?.data?.thread?.post;
+      const userText = post?.record?.text || "";
+      const existingReply = post?.record?.reply;
+      const rootRef = existingReply?.root ?? { uri: n.uri, cid: n.cid };
 
       const risingMatch = userText.match(
         /\b(aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn|aquarius|pisces)\b\s*(rising|ascendant)/i
@@ -87,7 +90,13 @@ async function processMentions({ limit = 50 } = {}) {
         replyText = await generateReply({ risingSign, moonContext, house, userText });
       }
 
-      await replyToPost(agent, { uri: n.uri, cid: n.cid, text: replyText });
+      await replyToPost(agent, {
+        rootUri: rootRef.uri,
+        rootCid: rootRef.cid,
+        parentUri: n.uri,
+        parentCid: n.cid,
+        text: replyText,
+      });
 
       processed.add(key);
       replied++;

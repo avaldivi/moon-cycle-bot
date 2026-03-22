@@ -90,15 +90,15 @@ async function postThread(agent, messages) {
   return rootPost;
 }
 
-async function replyToPost(agent, { uri, cid, text }) {
+async function replyToPost(agent, { rootUri, rootCid, parentUri, parentCid, text }) {
   const facets = buildHashtagFacets(text);
   return await agent.post({
     text,
     createdAt: new Date().toISOString(),
     facets,
     reply: {
-      root: { uri, cid },
-      parent: { uri, cid },
+      root: { uri: rootUri, cid: rootCid },
+      parent: { uri: parentUri, cid: parentCid },
     },
   });
 }
