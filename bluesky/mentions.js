@@ -23,11 +23,11 @@ function startOfToday(timezone = "America/New_York") {
 }
 
 async function processMentions({ limit = 50 } = {}) {
-  if (!acquireLock()) return { ok: true, skipped: true };
+  if (!(await acquireLock())) return { ok: true, skipped: true };
 
   try {
     const agent = await setupAgent();
-    const state = loadState();
+    const state = await loadState();
     const processed = new Set(state.processed || []);
     const lastSeenAt = state.lastSeenAt ? new Date(state.lastSeenAt) : null;
 
@@ -40,7 +40,7 @@ async function processMentions({ limit = 50 } = {}) {
 
     if (!lastSeenAt && notifs.length) {
       state.lastSeenAt = notifs[notifs.length - 1].indexedAt;
-      saveState(state);
+      await saveState(state);
       return { ok: true, skipped: true, reason: "primed" };
     }
 
@@ -106,11 +106,11 @@ async function processMentions({ limit = 50 } = {}) {
 
     state.lastSeenAt = newestSeen ? newestSeen.toISOString() : state.lastSeenAt;
     state.processed = Array.from(processed);
-    saveState(state);
+    await saveState(state);
 
     return { ok: true, replied };
   } finally {
-    releaseLock();
+    await releaseLock();
   }
 }
 

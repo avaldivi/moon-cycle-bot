@@ -1,0 +1,18 @@
+name: Trigger Daily Moon Transits (X)
+
+on:
+  schedule:
+    - cron: "0 13 * * *" # 13:00 UTC = 9:00 AM ET (during EDT)
+  workflow_dispatch:
+
+jobs:
+  ping-transits-x-endpoint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the /transits-x endpoint
+        env:
+          FLY_APP_URL: ${{ secrets.FLY_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -f -sS -X POST "$FLY_APP_URL/transits-x" \
+            -H "Authorization: Bearer $CRON_SECRET"
