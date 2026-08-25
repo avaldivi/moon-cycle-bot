@@ -12,9 +12,23 @@ jest.mock('@atproto/api', () => ({
 
 describe('Moon Phase Bot', () => {
 
-  const testDate = process.env.TEST_DATE 
-  ? new Date(process.env.TEST_DATE) 
+  const testDate = process.env.TEST_DATE
+  ? new Date(process.env.TEST_DATE)
   : new Date('2026-03-10T03:45:10Z'); // fallback default
+
+  // 🔹 Mock the ipgeolocation.io fetch — CI has no IPGEO_API_KEY/coordinates, and tests
+  // shouldn't depend on a live third-party API anyway. Fixed illumination/angle → Full Moon,
+  // which is one of IMPORTANT_PHASES, so getCurrentMoonPhase resolves in a single fetch call.
+  beforeEach(() => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ moon_illumination_percentage: '99.8', moon_angle: 178 }),
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
 
   // 🔹 Test 1 — Real Moon sign calculation for a known date
   it('should calculate the correct moon sign for a known date', async () => {
@@ -26,9 +40,7 @@ describe('Moon Phase Bot', () => {
   // 🔹 Test 2 — Real Moon phase for a known date
   it('should calculate the correct moon phase for a known date', async () => {
     const moon = await getCurrentMoonPhase(new Date('2026-03-10T03:45:10Z'));
-    expect(moon.currentPhase).toBeDefined();
-    expect(typeof moon.currentPhase).toBe('string');
-    console.log(`🌙 Moon phase: ${moon.currentPhase}`);
+    expect(moon.currentPhase).toBe('Full Moon');
   });
 
   // 🔹 Test 3 — Message is under 300 characters
