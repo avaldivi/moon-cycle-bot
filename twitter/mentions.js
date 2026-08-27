@@ -6,8 +6,11 @@ const { getMoonSign } = require("../tools/moon_sign");
 const { getHouseForRising } = require("../tools/house_calc");
 const { X_API_RATES } = require("../tools/x_cost_estimator");
 
+// "rising"/"ascendant" is an optional qualifier, not required — a bare sign name ("virgo")
+// matches too. Trade-off: this also matches sign mentions unrelated to rising sign (sun sign,
+// the moon's current transiting sign, etc.), which get treated as a rising-sign claim anyway.
 const RISING_SIGN_RE =
-  /\b(aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn|aquarius|pisces)\b\s*(rising|ascendant)/i;
+  /\b(aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn|aquarius|pisces)\b(?:\s*(?:rising|ascendant))?/i;
 
 // Mirrors bluesky/mentions.js, but polling is driven by since_id (native to the X mentions
 // endpoint) instead of a local timestamp/processed-set — X only returns tweets newer than

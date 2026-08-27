@@ -77,8 +77,11 @@ async function processMentions({ limit = 50 } = {}) {
       const existingReply = post?.record?.reply;
       const rootRef = existingReply?.root ?? { uri: n.uri, cid: n.cid };
 
+      // "rising"/"ascendant" is optional, not required — a bare sign name ("virgo") matches
+      // too. Trade-off: also matches sign mentions unrelated to rising sign (sun sign, the
+      // moon's current transiting sign, etc.), which get treated as a rising-sign claim anyway.
       const risingMatch = userText.match(
-        /\b(aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn|aquarius|pisces)\b\s*(rising|ascendant)/i
+        /\b(aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn|aquarius|pisces)\b(?:\s*(?:rising|ascendant))?/i
       );
 
       let replyText;

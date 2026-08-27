@@ -10,16 +10,24 @@ const { estimateThreadCost } = require("../tools/x_cost_estimator");
 const X_POST_PHASES = ["New Moon", "Full Moon", "First Quarter"];
 
 // Mirrors bluesky/moon_bot.js's templates/thread shape so the two platforms stay in sync.
-async function postMoonSignAndPhaseToX(dryRun = true) {
+// `date` exists only to preview a future/past day's copy in dry-run — the live /daily-x route
+// never passes one, so production always evaluates the real "today". Enforced below: a custom
+// date can only be combined with dryRun, never a real post.
+async function postMoonSignAndPhaseToX(dryRun = true, date = new Date()) {
   try {
-    const moon = await getCurrentMoonPhase();
+    const isToday = date.toDateString() === new Date().toDateString();
+    if (!dryRun && !isToday) {
+      throw new Error("Refusing to post live content for a non-today date — use dryRun to preview a future/past date instead.");
+    }
+
+    const moon = await getCurrentMoonPhase(date);
 
     if (!X_POST_PHASES.includes(moon.currentPhase)) {
-      console.log(`⚪ Skipping — today's phase (${moon.currentPhase}) isn't one of: ${X_POST_PHASES.join(", ")}`);
+      console.log(`⚪ Skipping — ${date.toDateString()}'s phase (${moon.currentPhase}) isn't one of: ${X_POST_PHASES.join(", ")}`);
       return { skipped: true, currentPhase: moon.currentPhase };
     }
 
-    const moonSign = await getMoonSign();
+    const moonSign = await getMoonSign(date);
     const moonEmoji = getMoonEmoji(moon.currentPhase);
 
     const templates = [
