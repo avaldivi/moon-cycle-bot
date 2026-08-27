@@ -1,17 +1,16 @@
-const store = require("./lib/redis_store");
+const store = require("../lib/redis_store");
 
-const KEY = "bluesky_mentions_state";
-const LOCK_KEY = "bluesky_mentions_lock";
+// Separate keys from mentions_state.js (Bluesky's) so the two platforms never share state.
+const KEY = "twitter_mentions_state";
+const LOCK_KEY = "twitter_mentions_lock";
 
-// Keep a small rolling window so state doesn’t grow forever
 const MAX_PROCESSED = 500;
 
 async function loadState() {
-  return store.loadJSON(KEY, { lastSeenAt: null, processed: [] });
+  return store.loadJSON(KEY, { sinceId: null, userId: null, processed: [] });
 }
 
 async function saveState(state) {
-  // prune processed list
   if (Array.isArray(state.processed) && state.processed.length > MAX_PROCESSED) {
     state.processed = state.processed.slice(state.processed.length - MAX_PROCESSED);
   }

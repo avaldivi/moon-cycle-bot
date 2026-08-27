@@ -81,8 +81,7 @@ async function findNextImportantPhase(fromDate) {
   return null;
 }
 
-async function getCurrentMoonPhase() {
-  const date = new Date();
+async function getCurrentMoonPhase(date = new Date()) {
   const data = await fetchMoonData(date);
 
   const phaseData = {

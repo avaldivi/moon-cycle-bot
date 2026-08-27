@@ -2,9 +2,17 @@ const express = require("express");
 const { runMoonGraph } = require("./graph/moonGraph");
 const { postMoonSignAndPhase } = require("./bluesky/moon_bot");
 const { processMentions } = require("./bluesky/mentions");
+const { postMoonSignAndPhaseToX } = require("./twitter/moon_bot");
+const { postMoonTransitsToX } = require("./twitter/moon_transits_bot");
+const { processMentions: processMentionsX } = require("./twitter/mentions");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Single kill switch for all X posting/replying — defaults to dry-run (no charges, no live
+// posts) until X_DRY_RUN=false is explicitly set as a Fly secret. Unlike Bluesky, X costs
+// real money per action, so this stays opt-in rather than opt-out.
+const X_DRY_RUN = (process.env.X_DRY_RUN ?? "true") === "true";
 
 app.use(express.json());
 
@@ -109,6 +117,41 @@ app.post("/mentions", requireCronSecret, async (req, res) => {
   } catch (err) {
     console.error("[/mentions] error", err);
     return res.status(500).json({ ok: false, error: "failed to process mentions" });
+  }
+});
+
+// 🔹 X (Twitter): daily phase-gated post (protected)
+app.post("/daily-x", requireCronSecret, async (req, res) => {
+  try {
+    const result = await postMoonSignAndPhaseToX(X_DRY_RUN);
+    return res.status(200).json({ message: "Daily moon post (X) processed", dryRun: X_DRY_RUN, result });
+  } catch (err) {
+    console.error("❌ [/daily-x] Error in daily X post:", err);
+    return res.status(500).json({ error: "Failed to post daily moon update to X" });
+  }
+});
+
+// 🔹 X (Twitter): moon transits post — runs here (not a standalone GitHub Actions script like
+// Bluesky's) because it shares the same rotating OAuth2 token state as /daily-x and /mentions-x
+// via data/x_oauth_state.json on the Fly volume. See twitter/x_client.js.
+app.post("/transits-x", requireCronSecret, async (req, res) => {
+  try {
+    const result = await postMoonTransitsToX(X_DRY_RUN);
+    return res.status(200).json({ message: "Moon transits post (X) processed", dryRun: X_DRY_RUN, result });
+  } catch (err) {
+    console.error("❌ [/transits-x] Error in X transits post:", err);
+    return res.status(500).json({ error: "Failed to post moon transits to X" });
+  }
+});
+
+// 🔹 X (Twitter): mentions processing route (protected)
+app.post("/mentions-x", requireCronSecret, async (req, res) => {
+  try {
+    const out = await processMentionsX({ maxResults: 10, dryRun: X_DRY_RUN });
+    return res.status(200).json(out);
+  } catch (err) {
+    console.error("[/mentions-x] error", err);
+    return res.status(500).json({ ok: false, error: "failed to process X mentions" });
   }
 });
 

@@ -23,11 +23,11 @@ function startOfToday(timezone = "America/New_York") {
 }
 
 async function processMentions({ limit = 50 } = {}) {
-  if (!acquireLock()) return { ok: true, skipped: true };
+  if (!(await acquireLock())) return { ok: true, skipped: true };
 
   try {
     const agent = await setupAgent();
-    const state = loadState();
+    const state = await loadState();
     const processed = new Set(state.processed || []);
     const lastSeenAt = state.lastSeenAt ? new Date(state.lastSeenAt) : null;
 
@@ -40,7 +40,7 @@ async function processMentions({ limit = 50 } = {}) {
 
     if (!lastSeenAt && notifs.length) {
       state.lastSeenAt = notifs[notifs.length - 1].indexedAt;
-      saveState(state);
+      await saveState(state);
       return { ok: true, skipped: true, reason: "primed" };
     }
 
@@ -77,8 +77,11 @@ async function processMentions({ limit = 50 } = {}) {
       const existingReply = post?.record?.reply;
       const rootRef = existingReply?.root ?? { uri: n.uri, cid: n.cid };
 
+      // "rising"/"ascendant" is optional, not required — a bare sign name ("virgo") matches
+      // too. Trade-off: also matches sign mentions unrelated to rising sign (sun sign, the
+      // moon's current transiting sign, etc.), which get treated as a rising-sign claim anyway.
       const risingMatch = userText.match(
-        /\b(aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn|aquarius|pisces)\b\s*(rising|ascendant)/i
+        /\b(aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn|aquarius|pisces)\b(?:\s*(?:rising|ascendant))?/i
       );
 
       let replyText;
@@ -106,11 +109,11 @@ async function processMentions({ limit = 50 } = {}) {
 
     state.lastSeenAt = newestSeen ? newestSeen.toISOString() : state.lastSeenAt;
     state.processed = Array.from(processed);
-    saveState(state);
+    await saveState(state);
 
     return { ok: true, replied };
   } finally {
-    releaseLock();
+    await releaseLock();
   }
 }
 
