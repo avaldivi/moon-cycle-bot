@@ -38,8 +38,12 @@ async function processMentions({ limit = 50 } = {}) {
 
     const todayStart = startOfToday(process.env.TIMEZONE || "America/New_York");
 
-    if (!lastSeenAt && notifs.length) {
-      state.lastSeenAt = notifs[notifs.length - 1].indexedAt;
+    if (!state.primed) {
+      // Same fix as twitter/mentions.js: `primed` is tracked explicitly rather than inferred
+      // from lastSeenAt's nullness, so a priming poll that happens to see zero notifications
+      // doesn't leave the account permanently un-primed.
+      state.primed = true;
+      if (notifs.length) state.lastSeenAt = notifs[notifs.length - 1].indexedAt;
       await saveState(state);
       return { ok: true, skipped: true, reason: "primed" };
     }

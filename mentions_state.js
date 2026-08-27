@@ -7,7 +7,7 @@ const LOCK_KEY = "bluesky_mentions_lock";
 const MAX_PROCESSED = 500;
 
 async function loadState() {
-  return store.loadJSON(KEY, { lastSeenAt: null, processed: [] });
+  return store.loadJSON(KEY, { lastSeenAt: null, processed: [], primed: false });
 }
 
 async function saveState(state) {

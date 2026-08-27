@@ -40,8 +40,13 @@ async function processMentions({ maxResults = 10, dryRun = true } = {}) {
 
     console.log(`💰 Poll cost: $${(tweets.length * X_API_RATES.ownedRead).toFixed(3)} (${tweets.length} tweet(s) read)`);
 
-    if (!state.sinceId) {
-      // First run: prime sinceId from the newest mention seen so far, don't reply to backlog.
+    if (!state.primed) {
+      // First run: mark primed so future runs process mentions instead of re-priming. Using
+      // sinceId's nullness for this (as before) breaks when the account has zero mentions at
+      // priming time — sinceId stays null, so the *next* run re-enters this branch and silently
+      // "primes" on the first real mention instead of replying to it. `primed` decouples "have
+      // we ever primed" from "do we have a sinceId yet".
+      state.primed = true;
       if (tweets.length) state.sinceId = tweets[0].id;
       await saveState(state);
       return { ok: true, skipped: true, reason: "primed" };
@@ -89,7 +94,7 @@ async function processMentions({ maxResults = 10, dryRun = true } = {}) {
       processed.add(tweet.id);
       replied++;
 
-      if (BigInt(tweet.id) > BigInt(newestId)) newestId = tweet.id;
+      if (!newestId || BigInt(tweet.id) > BigInt(newestId)) newestId = tweet.id;
     }
 
     state.sinceId = newestId;

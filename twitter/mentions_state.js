@@ -7,7 +7,7 @@ const LOCK_KEY = "twitter_mentions_lock";
 const MAX_PROCESSED = 500;
 
 async function loadState() {
-  return store.loadJSON(KEY, { sinceId: null, userId: null, processed: [] });
+  return store.loadJSON(KEY, { sinceId: null, userId: null, processed: [], primed: false });
 }
 
 async function saveState(state) {
